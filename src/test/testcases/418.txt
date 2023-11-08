@@ -1,0 +1,20 @@
+class Program {
+                        func constructor() {
+                            
+                        }
+                        func constructor(a: int) {
+                            
+                        }
+                        func constructor(a,b: int) {
+                            
+                        }
+                        func constructor(a,b: int, c:float) {
+                            
+                        }
+                        func @main():void {
+                            io.@writeInt(Shape.@numOfShape);
+                        }
+                        var @abc: int;
+                        var @main: string;
+                    }
+                

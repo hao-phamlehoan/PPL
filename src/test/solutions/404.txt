@@ -1,1 +1,1 @@
-Redeclared Attribute: c
+Redeclared Method: main

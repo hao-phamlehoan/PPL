@@ -1,0 +1,6 @@
+class a {
+                    func main(): int {
+                        
+                    }
+                    var main: int;
+                }

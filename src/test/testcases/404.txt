@@ -1,1 +1,8 @@
-Program([ClassDecl(Id(a),[AttributeDecl(VarDecl(Id(a),IntType)),AttributeDecl(VarDecl(Id(c),IntType)),AttributeDecl(VarDecl(Id(c),IntType))])])
+class a {
+                    func main():int {
+                        
+                    }
+                    func main(): float {
+                        
+                    }
+                }

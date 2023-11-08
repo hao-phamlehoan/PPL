@@ -1,1 +1,3 @@
-Program([ClassDecl(Id(a),[]),ClassDecl(Id(b),[]),ClassDecl(Id(a),[])])
+ class a {var a:int;var c:int;}
+                    class b {var a:int;var c:int;var c:int;}
+                

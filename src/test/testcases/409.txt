@@ -1,0 +1,6 @@
+ class a {var a:int;var c:int;}
+                    class b {var a:int;var c:int;}
+                    class c {var a:int;var c:int;}
+                    class d {var a:int;var c:int;}
+                    class a {var a:int;var c:int;} 
+                

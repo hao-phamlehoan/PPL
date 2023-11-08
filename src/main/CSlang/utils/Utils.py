@@ -8,6 +8,7 @@ class MType(Type):
     rettype : Type
     def __str__(self):
         return "MType([" + ",".join(str(x) for x in self.partype) + "]," + str(self.rettype) + ")"
+    # param and return
 
 @dataclass
 class Symbol:
@@ -17,6 +18,7 @@ class Symbol:
 
     def __str__(self):
         return "Symbol(" + self.name + "," + self.cstype + "," + str(self.mutable) + ")"
+    # dùng cho biến
 
 
 class Utils:

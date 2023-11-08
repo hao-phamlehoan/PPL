@@ -1,0 +1,12 @@
+class Program {
+                        func getArea():int {
+                            return self.length * self.width;
+                        }
+                        
+                    }
+                    class Program {
+                        func @main():void {
+                            io.@writeInt(Shape.@numOfShape);
+                        }
+                    }
+                
