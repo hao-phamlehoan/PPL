@@ -162,7 +162,7 @@ class StaticChecker(BaseVisitor, Utils):
         env['current'] = o['current']
         env['parent'] = o['parent']
         [self.visit(param, (Parameter(), env))
-         for param in ast.param]
+        for param in ast.param]
         decls = ast.body.decl
         stmts = ast.body.stmt
         for decl in decls:
@@ -572,6 +572,7 @@ class StaticChecker(BaseVisitor, Utils):
                         raise TypeMismatchInExpression(ast)
         return classType
 
+    # Literal check
     def visitIntLiteral(self, ast, param):
         return (None, IntType(), None)
 
@@ -598,6 +599,7 @@ class StaticChecker(BaseVisitor, Utils):
                 raise IllegalArrayLiteral(ast)
         return (None,  ArrayType(len(temp), default), None)
 
+    # Type check
     def visitIntType(self, ast, param):
         return IntType()
 

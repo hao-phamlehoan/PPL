@@ -1,0 +1,8 @@
+ class cl {var a:int;var c:int;}
+                    class b {var a:cl;var c:int;const d:int;}
+                    class c {var a:int;var c:int;const e:int;}
+                    class d {
+                        const a:int;
+                        var d:int;
+                        const d:int;}
+                
