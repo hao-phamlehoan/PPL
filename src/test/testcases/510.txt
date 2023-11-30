@@ -1,0 +1,21 @@
+ 
+                    class Shape {
+                    var @numOfShape: int = 0;
+                    const immutableAttribute: int = 0;
+                    var length, width: int;
+                    func @getNumOfShape():int {
+                    return @numOfShape;
+                    }
+                    }
+                    class Shape <- Retangle {
+                    func getArea():int {
+                    return self.length * self.width;
+                    }
+                    }
+                    class Program {
+                    func @main():void {
+                    io.@writeInt(Shape.@numOfShape);
+                    var b,b:int;
+                    }
+                    }
+                

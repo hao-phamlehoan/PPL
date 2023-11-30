@@ -1,0 +1,17 @@
+ 
+                    class B { }
+                    class A {
+                        func constructor (a: B, b:float) {
+                            
+                        }
+                    }
+                    class Program {
+                        const b:int = 12;
+                        func @main():void {
+                            var b: int ;
+                            var c: float ;
+                            c := - 3.33333;
+                            b := - true;
+                        }
+                    }
+                

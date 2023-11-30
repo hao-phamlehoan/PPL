@@ -1,0 +1,10 @@
+ class ABC {
+                        
+                    }
+                    class Program {
+                        func @main():void {
+                            var i: ABC = null;
+                            var a: ABC = 1;
+                        }
+                    }
+                

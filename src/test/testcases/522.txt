@@ -1,0 +1,24 @@
+ 
+                    class C {
+                        
+                    }
+                    class C <-B { 
+                        var a: int;
+                    }
+                    class A {
+                        
+                    }
+                    class Program {
+                        var myPI: int;
+                        func @main():void {
+                            {
+                            var r, s: int;
+                            r := 2;
+                            var a, b: [5]int;
+                            s := r * r * self.myPI;
+                            a[0] := s;
+                            var i,i:int;
+                            }
+                        }
+                    }
+                

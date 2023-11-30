@@ -101,10 +101,11 @@ idlist: ID COMMA idlist | ID;
 empty_exprlist: exprprime | ;
 exprprime: expr COMMA exprprime | expr;
 
-lit: arraylit | intlit | FLOATLIT | BOOLIT | STRINGLIT;
+lit: arraylit | intlit | FLOATLIT | BOOLIT | STRINGLIT | NULL | ID;
 
 arraylit: LSQAB array_decl RSQAB;
-array_decl: array_int | array_float | array_bool | array_string;
+array_decl: lit COMMA array_decl | lit;
+// array_decl: array_int | array_float | array_bool | array_string;
 // array type
 array_int: intlit COMMA array_int | intlit;
 array_float: FLOATLIT COMMA array_float | FLOATLIT;

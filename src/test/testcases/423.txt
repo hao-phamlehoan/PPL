@@ -1,0 +1,4 @@
+ class cl {var a:int;var c:int;}
+                    class cl1 <- b {var a,c:cl;const d:int;}
+                    class c {var a,a:int;var c:int;const e:int;}
+                

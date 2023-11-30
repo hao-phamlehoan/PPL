@@ -1,0 +1,14 @@
+ 
+                    class B { }
+                    class A {
+                        func constructor (a: B, b:float) {
+                            
+                        }
+                    }
+                    class Program {
+                        func @main():void {
+                            const f:float = 3/5; 
+                            const i:int = 3/5; 
+                        }
+                    }
+                

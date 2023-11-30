@@ -1,0 +1,11 @@
+ 
+                    class Program {
+                        func sum(): int {
+                            return 1;
+                        }
+                        func @main():void {
+                            var a: int = self.sum();
+                            var i,i: float;
+                        }
+                    }
+                

@@ -1,0 +1,11 @@
+ 
+                    class Program {
+                        const b:int = 12;
+                        func @main():void {
+                            var k: [3]int = [2,4,5];
+                            k[1] := 0;
+                            const l: [3]int = [2,4,5];
+                            l[1] :=  2;
+                        }
+                    }
+                

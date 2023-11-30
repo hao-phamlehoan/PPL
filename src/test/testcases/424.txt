@@ -1,0 +1,4 @@
+ class cl {var a:int;var c:int;}
+                    class cl <- b {var a: float = self.a;}
+                    class c {var a,a:int;var c:int;const e:int;}
+                

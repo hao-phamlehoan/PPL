@@ -1,0 +1,19 @@
+ 
+                    class B { 
+                        var a: int;
+                    }
+                    class B <- A {
+                        func foo(a: int):int {
+                            
+                        }
+                    }
+                    class Program {
+                        func @main():void {
+                            var x: A;
+                            var a: [5]int;
+                            var b: [4]int;
+                            a[3+x.foo(2)] := a[b[2]] +3.3;
+                            var b,b:int;
+                        }
+                    }
+                

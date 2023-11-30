@@ -1,0 +1,9 @@
+ 
+                    class Program {
+                        const b:int = 12;
+                        func @main():void {
+                            var a: int;
+                            var b: int = self.b + a.e;
+                        }
+                    }
+                

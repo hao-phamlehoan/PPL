@@ -1,0 +1,19 @@
+ 
+                    class B { }
+                    class A {
+                        func constructor (a: B, b:[3]float) {
+                            
+                        }
+                    }
+                    class Program {
+                        const b:int = 12;
+                        func @main():void {
+                            var b: A;
+                            var c: B;
+                            const a: [3]bool = [true, false,false];
+                            b := new A(c, a);
+
+                            var b: float;
+                        }
+                    }
+                

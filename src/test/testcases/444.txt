@@ -1,0 +1,8 @@
+ 
+                    class Program {
+                        func @main():void {
+                            var i: bool = true;
+                            var n: bool = 1;
+                        }
+                    }
+                

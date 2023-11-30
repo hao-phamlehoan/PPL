@@ -1,0 +1,10 @@
+ 
+                    class Program {
+                        const b: int;
+                        var a : int;
+                        func @main():void {
+                            var a: int = a;
+                            var i,i: float;
+                        }
+                    }
+                

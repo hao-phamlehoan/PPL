@@ -347,7 +347,7 @@ class ASTGeneration(CSlangVisitor):
         if ctx.getChildCount() == 1:
             return self.visit(ctx.expr11())
         
-        classname = ClassType(Id(ctx.ID().getText()))
+        classname = Id(ctx.ID().getText())
         param = self.visit(ctx.empty_exprlist())
         return NewExpr(classname, param)
     
@@ -404,7 +404,7 @@ class ASTGeneration(CSlangVisitor):
 
     # array_type: LSQAB DIGIT RSQAB array_data_type_decl;
     def visitArray_type(self, ctx: CSlangParser.Array_typeContext):
-        size = IntLiteral(ctx.DIGIT().getText())
+        size = int(ctx.DIGIT().getText())
         eleType = self.visit(ctx.array_data_type_decl())
         return ArrayType(size, eleType);
     
@@ -443,7 +443,7 @@ class ASTGeneration(CSlangVisitor):
             return [self.visit(ctx.expr())]
         return [self.visit(ctx.expr())] + self.visit(ctx.exprprime());
 
-    # lit: arraylit | intlit | FLOATLIT | BOOLIT | STRINGLIT;
+    # lit: arraylit | intlit | FLOATLIT | BOOLIT | STRINGLIT | NULL | ID;
     def visitLit(self, ctx:CSlangParser.LitContext):
         if ctx.FLOATLIT():
             return FloatLiteral(float(ctx.FLOATLIT().getText()));
@@ -453,6 +453,10 @@ class ASTGeneration(CSlangVisitor):
             return StringLiteral(ctx.STRINGLIT().getText());
         elif ctx.intlit():
             return self.visit(ctx.intlit());
+        elif ctx.NULL():
+            return NullLiteral();
+        elif ctx.ID():
+            return Id(ctx.ID().getText());
         else:
             return self.visit(ctx.arraylit());
 
@@ -463,10 +467,16 @@ class ASTGeneration(CSlangVisitor):
     # arraylit: LSQAB array_decl RSQAB;
     def visitArraylit(self, ctx:CSlangParser.ArraylitContext):
         return ArrayLiteral(self.visit(ctx.array_decl()));
+    #array_decl: lit COMMA array_decl | lit;
+    def visitArray_decl(self, ctx):
+        if ctx.getChildCount() == 1:
+            return [self.visit(ctx.lit())];
+        
+        return [self.visit(ctx.lit())] + self.visit(ctx.array_decl());
     
     # array_decl: array_int | array_float | array_bool | array_string;
-    def visitArray_decl(self, ctx:CSlangParser.Array_declContext):
-        return self.visit(ctx.getChild(0));
+    # def visitArray_decl(self, ctx:CSlangParser.Array_declContext):
+    #     return self.visit(ctx.getChild(0));
     
     # array_int: intlit COMMA array_int | intlit;
     def visitArray_int(self, ctx: CSlangParser.Array_intContext):

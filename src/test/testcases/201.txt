@@ -1,1 +1,7 @@
-program
+
+                    class Program {
+                        func @main():void {
+                            var i: [5]int = [1.1,2.2,null];
+                        }
+                    }
+                

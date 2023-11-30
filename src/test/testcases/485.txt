@@ -1,0 +1,22 @@
+ 
+                    class B { }
+                    class A {
+                        func constructor (a: B, b:float) {
+                            
+                        }
+                        func nonvoid (a: int, b: [5]string): B {
+                            
+                        }
+                    }
+                    class Program {
+                        const b:int = 12;
+                        func @main():void {
+                            var b: A;
+                            var c: B;
+                            var s: [2]string;
+                            c := b.nonvoid(3,s);
+
+                            var b: float;
+                        }
+                    }
+                

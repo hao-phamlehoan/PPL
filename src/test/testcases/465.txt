@@ -1,0 +1,8 @@
+ 
+                    class Program {
+                        func @main():void {
+                            const a: float = 3.2;
+                            a := 1;
+                        }
+                    }
+                

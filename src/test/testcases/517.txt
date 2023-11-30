@@ -1,0 +1,18 @@
+ 
+                    class B { 
+                        var a: int;
+                    }
+                    class B <- A {
+                        var b: [5]int;
+                        func m(): [7]string{
+                            
+                        }
+                    }
+                    class Program {
+                        func @main():void {
+                            var x: A;
+                            x.b[2] := x.m()[4];
+                            var x: int;
+                        }
+                    }
+                

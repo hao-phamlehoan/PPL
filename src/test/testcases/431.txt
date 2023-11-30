@@ -1,0 +1,11 @@
+ 
+                    class Program {
+                        func @main():void {
+                            var i:int;
+                            for i := 0; i < 10; i := i + 1 {
+                                break;
+                            }
+                            continue;
+                        }
+                    }
+                

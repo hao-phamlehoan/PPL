@@ -4,5 +4,5 @@ class a {var a:int;var c:int;}
                     class d {
                         const a:int;
                         var d:int;
-                        const d:int;}
+                        const d:string;}
                 

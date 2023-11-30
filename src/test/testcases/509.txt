@@ -1,0 +1,17 @@
+ 
+                    class B { 
+                        var a: int;
+                    }
+                    class B <- A {
+                        
+                    }
+                    class Program {
+                        func @main():void {
+                            var a: A ;
+                            var b: B ;
+                            b := a;
+                            b.a := a.a;
+                            var b:int;
+                        }
+                    }
+                

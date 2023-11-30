@@ -1,0 +1,16 @@
+ 
+                    class B { }
+                    class B <- A {
+                        func abc() :void {
+                            
+                        }
+                    }
+                    class Program {
+                        func @main():void {
+                            var i: [5]int;
+                            var b: A;
+                            i := [1,2,3,4,6];
+                            i := [1,2,3,4];
+                        }
+                    }
+                

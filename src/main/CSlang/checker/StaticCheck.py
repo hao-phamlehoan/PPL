@@ -2,6 +2,9 @@
 """
  * @author nhphung
 """
+
+# MSSV 2013093
+
 from AST import * 
 from Visitor import *
 from Utils import Utils, MType
@@ -49,7 +52,7 @@ class GetEnv(BaseVisitor,Utils):
                     found = True
                     break
             if not found:
-                raise Undeclared(Class(), parent)
+                raise Undeclared(Class(), parent.name)
         env = []
         for mem in ast.memlist:
             env += self.visit(mem, (env, o))
@@ -58,7 +61,7 @@ class GetEnv(BaseVisitor,Utils):
     def visitMethodDecl(self,ast,o):
         if ast.name.name != 'constructor' and ast.name.name in map(lambda x: x.name, o[0]): 
             raise Redeclared(Method(), ast.name.name)
-        typ = self.visit(ast.returnType, o[0])
+        typ = self.visit(ast.returnType, o)
         params = ast.param 
         local =  []
         paramtyp = []
@@ -66,6 +69,8 @@ class GetEnv(BaseVisitor,Utils):
             if param.variable.name in local:
                 raise Redeclared(Parameter(), param.variable.name)
             local += [param.variable.name]
+            if type(param.varType) is VoidType:
+                raise TypeMismatchInDeclaration(param)
             paramtyp += [self.visit(param.varType, o)]
         if ast.name.name == 'constructor':
             for mem in o[0]:
@@ -124,7 +129,7 @@ class StaticChecker(BaseVisitor,Utils):
                             Member("@writeFloat",MType([StaticChecker.floattype],StaticChecker.voidtype),False),
                             Member("@readBool",MType([],StaticChecker.booltype),False),
                             Member("@writeBool",MType([StaticChecker.booltype],StaticChecker.voidtype),False),
-                            Member("@readStr",MType([],StaticChecker.stringtype),False),
+                            Member("@readStr",MType ([],StaticChecker.stringtype),False),
                             Member("@writeStr",MType([StaticChecker.stringtype],StaticChecker.voidtype),False),
                             ])]
     
@@ -138,8 +143,17 @@ class StaticChecker(BaseVisitor,Utils):
                 for mem in classdecl.member:
                     if field == mem.name:
                         return (mem.typ, 'var' if mem.isMu else 'const')
-                if mem.parent:
-                    return self.recurVisit(field, mem.parent.name, o)
+                if classdecl.parent:
+                    return self.recurVisit(field, classdecl.parent.name, o)
+        return None
+    
+    def recurClass(self, curr_name, target_name, o):
+        for classdecl in o[1]:
+            if curr_name == classdecl.name:
+                if classdecl.name == target_name:
+                    return ClassType(target_name)
+                elif classdecl.parent:
+                    return self.recurClass(classdecl.parent.name, target_name, o)
         return None
         
     def visitProgram(self,ast, o):
@@ -157,7 +171,6 @@ class StaticChecker(BaseVisitor,Utils):
         o += env
         for classdecl in ast.decl:
             self.visit(classdecl, o)
-        # return reduce(lambda a,e: self.visit(e,a), ast.decl,o)
         
     def visitClassDecl(self, ast, o):
         for mem in ast.memlist:
@@ -171,7 +184,7 @@ class StaticChecker(BaseVisitor,Utils):
         paramlist = ast.param 
         local = []
         for param in paramlist:
-            local += [(param.variable.name, self.visit(param.varType, o), 'var')]
+            local += [(param.variable.name, self.visit(param.varType, (local, o[0], o[1], ast.returnType, None)), 'var')]
         self.visit(ast.body, (local, o[0], o[1], ast.returnType, None))  
 
     def visitVarDecl(self, ast, o):
@@ -179,54 +192,65 @@ class StaticChecker(BaseVisitor,Utils):
         typ = self.visit(ast.varType, o)
         if o[3]:
             if name in map(lambda x: x[0], o[0][0]):
-                Redeclared(Variable(), name)   
+                raise Redeclared(Variable(), name)   
+        if type(typ) is VoidType:
+            raise TypeMismatchInDeclaration(ast)
         if ast.varInit is not None:
             value = self.visit(ast.varInit, (o[0], o[1], o[2], o[3], o[4]))  
             if type(typ) is not type(value[0]):
-                if not(type(typ) is FloatType and type(value[0]) is IntType):
+                flag = True
+                if (type(typ) is FloatType and type(value[0]) is IntType):
+                    flag = False
+                if (type(typ) is ClassType and type(value[0]) is NullLiteral):
+                    flag = False
+                if flag:
                     raise TypeMismatchInDeclaration(ast)
-                if not(type(typ) is ClassType and type(value[0]) is NullLiteral):
-                    raise TypeMismatchInDeclaration(ast)
-                
-            if type(typ) is ClassType:
+            elif type(typ) is ClassType:
                 if typ.classname.name != value[0].classname.name:
-                    raise TypeMismatchInDeclaration(ast)
-                if type(typ) is ArrayType:
-                    if typ.size != value[0].size:
+                    if not(self.recurClass(value[0].classname.name, typ.classname.name, o)):
                         raise TypeMismatchInDeclaration(ast)
-                    if type(typ.eleTyp) is not type(value[0].eleTyp):
-                        if not(type(typ.eleTyp) is FloatType and type(value[0].eleTyp) is IntType):
-                            raise TypeMismatchInDeclaration(ast)
+            elif type(typ) is ArrayType:
+                if typ.size != value[0].size:
+                    raise TypeMismatchInDeclaration(ast)
+                if type(typ.eleType) is not type(value[0].eleType):
+                    if not(type(typ.eleType) is FloatType and type(value[0].eleType) is IntType):
+                        raise TypeMismatchInDeclaration(ast)
         if o[3]:
-            o[0][0] += [(name, typ, 'var')]
+            o[0][0].append((name, typ, 'var'))
     
     def visitConstDecl(self,ast,o):
-        name = ast.variable.name
-        typ = self.visit(ast.varType, o)
+        name = ast.constant.name
+        typ = self.visit(ast.constType, o)
         if o[3]:
             if name in map(lambda x: x[0], o[0][0]):
-                Redeclared(Constant(), name)   
-        if ast.varInit is not None:
-            value = self.visit(ast.varInit, (o[0], o[1], o[2], o[3], o[4]))  
+                raise Redeclared(Constant(), name)   
+        if type(typ) is VoidType:
+            raise TypeMismatchInDeclaration(ast)
+        if ast.value is not None:
+            value = self.visit(ast.value, (o[0], o[1], o[2], o[3], o[4]))  
             if type(typ) is not type(value[0]):
-                if not(type(typ) is FloatType and type(value[0]) is IntType):
-                    raise TypeMismatchInDeclaration(ast)
-                if not(type(typ) is ClassType and type(value[0]) is NullLiteral):
+                flag = True
+                if (type(typ) is FloatType and type(value[0]) is IntType):
+                    flag = False
+                if (type(typ) is ClassType and type(value[0]) is NullLiteral):
+                    flag = False
+                if flag:    
                     raise TypeMismatchInDeclaration(ast)
                 
-            if type(typ) is ClassType:
+            elif type(typ) is ClassType:
                 if typ.classname.name != value[0].classname.name:
-                    raise TypeMismatchInDeclaration(ast)
-                if type(typ) is ArrayType:
-                    if typ.size != value[0].size:
+                    if not(self.recurClass(value[0].classname.name, typ.classname.name, o)):
                         raise TypeMismatchInDeclaration(ast)
-                    if type(typ.eleTyp) is not type(value[0].eleTyp):
-                        if not(type(typ.eleTyp) is FloatType and type(value[0].eleTyp) is IntType):
-                            raise TypeMismatchInDeclaration(ast)
+            elif type(typ) is ArrayType:
+                if typ.size != value[0].size:
+                    raise TypeMismatchInDeclaration(ast)
+                if type(typ.eleType) is not type(value[0].eleType):
+                    if not(type(typ.eleType) is FloatType and type(value[0].eleType) is IntType):
+                        raise TypeMismatchInDeclaration(ast)
         else:
             raise TypeMismatchInDeclaration(ast)
         if o[3]:
-            o[0][0] += [(name, typ, 'const')]
+            o[0][0].append((name, typ, 'const'))
             
     def visitBinaryOp(self,ast,o):
         e1t, kindl = self.visit(ast.left, o)
@@ -260,7 +284,7 @@ class StaticChecker(BaseVisitor,Utils):
                 return (BoolType(), 'const')
             raise TypeMismatchInExpression(ast)
         if ast.op in ['==', '!=']:
-            if (type(e1t) is IntType or type(e1t) is BoolType) and (type(e2t) is IntType or type(e2t) is BoolType):
+            if (type(e1t) is IntType and type(e2t) is IntType) or (type(e1t) is BoolType and type(e2t) is BoolType):
                 return (BoolType(), 'const')
             raise TypeMismatchInExpression(ast)
             
@@ -281,26 +305,29 @@ class StaticChecker(BaseVisitor,Utils):
     def visitNewExpr(self,ast,o):
         for decl in o[1]:
             if ast.classname.name == decl.name:
+                flag = False
                 for mem in decl.member:
                     if mem.name == 'constructor':
                         method = mem.typ 
                         paramlist = [self.visit(param, o) for param in ast.param]
-                        if len(paramlist) != len(method.partype):
-                            raise TypeMismatchInExpression(ast)
-                        for i in range(0, len(paramlist)):
-                            if type(paramlist[i][0]) is type(method.partype[i][0]):
-                                if type(paramlist[i][0]) is ClassType:
-                                    if paramlist[i][0].classname.name != method.partype[i][0].classname.name:
-                                        raise TypeMismatchInExpression(ast)
-                                if type(paramlist[i][0]) is ArrayType:
-                                    if paramlist[i][0].size != method.partype[i][0].size:
-                                        raise TypeMismatchInExpression(ast)
-                                    if type(paramlist[i][0].eleTyp) is not type(method.partype[i][0].eleTyp):
-                                        if not(type(paramlist[i][0].eleTyp) is IntType and type(method.partype[i][0].eleTyp) is FloatType):
-                                            raise TypeMismatchInExpression(ast)
-                            elif not(type(paramlist[i][0]) is IntType and type(method.partype[i][0]) is FloatType):
-                                raise TypeMismatchInExpression(ast)
-                        return (ClassType(ast.classname), 'const')
+                        if len(paramlist) == len(method.partype):
+                            flag = True
+                            for i in range(0, len(paramlist)):
+                                if type(paramlist[i][0]) is type(method.partype[i]):
+                                    if type(paramlist[i][0]) is ClassType:
+                                        if paramlist[i][0].classname.name != method.partype[i].classname.name:
+                                            if not(self.recurClass(paramlist[i][0].classname.name, method.partype[i].classname.name, o)):
+                                                flag = False
+                                    if type(paramlist[i][0]) is ArrayType:
+                                        if paramlist[i][0].size != method.partype[i].size:
+                                            flag = False
+                                        if type(paramlist[i][0].eleType) is not type(method.partype[i].eleType):
+                                            if not(type(paramlist[i][0].eleType) is IntType and type(method.partype[i].eleType) is FloatType):
+                                                flag = False
+                                elif not(type(paramlist[i][0]) is IntType and type(method.partype[i]) is FloatType):
+                                    flag = False
+                if flag:
+                    return (ClassType(ast.classname), 'const')
                 raise TypeMismatchInExpression(ast)
         raise Undeclared(Class(), ast.classname.name)
         
@@ -309,6 +336,11 @@ class StaticChecker(BaseVisitor,Utils):
             for j in i:
                 if ast.name ==  j[0]:
                     return (j[1], j[2])
+        for decl in o[1]:
+            if o[2] == decl.name:
+                for mem in decl.member:
+                    if ast.name == mem.name:
+                        return (mem.typ, 'var' if mem.isMu else 'const')
         raise Undeclared(Identifier(), ast.name)
     
     def visitArrayCell(self,ast,o):
@@ -316,17 +348,26 @@ class StaticChecker(BaseVisitor,Utils):
         idxType = self.visit(ast.idx, o)
         if type(idxType[0]) is not IntType or type(arrType[0]) is not ArrayType:
             raise TypeMismatchInExpression(ast)
-        return arrType
+        return arrType[0].eleType, arrType[1]
     
     def visitFieldAccess(self,ast,o):
-        obj = self.visit(ast.obj, o)
         name = ''
-        if type(obj[0]) is ClassType:
-            name = obj.classname.name
-        elif type(obj[0]) is SelfLiteral:
-            name = o[2]
+        if ast.fieldname.name.startswith('@'):
+            if ast.obj:
+                name = ast.obj.name
+            else:
+                name = o[2]
         else:
-            raise TypeMismatchInExpression(ast)
+            if ast.obj:   
+                obj = self.visit(ast.obj, o)
+                if type(obj[0]) is ClassType:
+                    name = obj[0].classname.name
+                elif type(obj[0]) is SelfLiteral:
+                    name = o[2]
+                else:
+                    raise TypeMismatchInExpression(ast)
+            else:
+                name = o[2]
         for decl in o[1]:
             if name == decl.name:
                 for mem in decl.member:
@@ -347,22 +388,19 @@ class StaticChecker(BaseVisitor,Utils):
             self.visit(stmt, (local, o[1], o[2], o[3], o[4]))
     
     def visitIf(self,ast,o):
-        local = o[0]
         if ast.preStmt: 
-            local = [[]] + local
-            for stmt in ast.preStmt:
-                self.visit(stmt, (local, o[1], o[2], o[3], o[4]))
-        conType = self.visit(ast.expr, (local, o[1], o[2], o[3], o[4]))
+            self.visit(ast.preStmt, (o[0], o[1], o[2], o[3], o[4]))
+        conType = self.visit(ast.expr, (o[0], o[1], o[2], o[3], o[4]))
         if type(conType[0]) is not BoolType:
             raise TypeMismatchInStatement(ast)
-        self.visit(ast.thenStmt, (local, o[1], o[2], o[3], o[4]))
+        self.visit(ast.thenStmt, (o[0], o[1], o[2], o[3], o[4]))
         if ast.elseStmt: 
-            self.visit(ast.elseStmt, (local, o[1], o[2], o[3], o[4]))
+            self.visit(ast.elseStmt, (o[0], o[1], o[2], o[3], o[4]))
         
     def visitFor(self,ast,o):
         self.visit(ast.initStmt, (o[0], o[1], o[2], o[3], o[4]))
-        exprType = self.visit(ast.exprStmt, (o[0], o[1], o[2], o[3], o[4]))
-        if type(exprType) is not BoolType:
+        exprType = self.visit(ast.expr, (o[0], o[1], o[2], o[3], o[4]))
+        if type(exprType[0]) is not BoolType:
             raise TypeMismatchInStatement(ast)
         self.visit(ast.postStmt, (o[0], o[1], o[2], o[3], o[4]))
         self.visit(ast.loop, (o[0], o[1], o[2], o[3], 'for'))
@@ -379,27 +417,34 @@ class StaticChecker(BaseVisitor,Utils):
                 raise TypeMismatchInStatement(ast)
         elif type(lhs[0]) is ClassType:
             if lhs[0].classname.name != exp[0].classname.name:
-                raise TypeMismatchInExpression(ast)
+                if not(self.recurClass(exp[0].classname.name, lhs[0].classname.name, o)):
+                    raise TypeMismatchInStatement(ast)
         elif type(lhs[0]) is ArrayType:
             if lhs[0].size != exp[0].size:
-                raise TypeMismatchInExpression(ast)
-            if type(lhs[0].eleTyp) is not type(exp[0].eleTyp):
-                if not(type(lhs[0].eleTyp) is FloatType and type(exp[0].eleTyp) is IntType):
+                raise TypeMismatchInStatement(ast)
+            if type(lhs[0].eleType) is not type(exp[0].eleType):
+                if not(type(lhs[0].eleType) is FloatType and type(exp[0].eleType) is IntType):
                     raise TypeMismatchInStatement(ast)
     
     def visitCallStmt(self,ast,o):
         methodname = ast.method.name 
         name = ''
-        if ast.obj:
-            obj = self.visit(ast.obj, o)
-            if type(obj[0]) is ClassType:
-                name = obj.classname.name
-            elif type(obj[0]) is SelfLiteral:
-                name = o[2]
+        if methodname.startswith('@'):       
+            if ast.obj:
+                name = ast.obj.name
             else:
-                raise TypeMismatchInStatement(ast)
+                name = o[2]
         else:
-            name = o[2]
+            if ast.obj:
+                obj = self.visit(ast.obj, o)
+                if type(obj[0]) is ClassType:
+                    name = obj[0].classname.name
+                elif type(obj[0]) is SelfLiteral:
+                    name = o[2]
+                else:
+                    raise TypeMismatchInStatement(ast)
+            else:
+                name = o[2]
             
         for decl in o[1]:
             if name == decl.name:
@@ -407,78 +452,90 @@ class StaticChecker(BaseVisitor,Utils):
                 for mem in decl.member:
                     if mem.name == methodname and type(mem.typ) is MType:
                         method = mem.typ 
-                inheritance = None
-                if decl.parent:
-                    inheritance = self.recurVisit(methodname, decl.parent.name, o)
-                if inheritance and type(inheritance[0]) is MType:
-                    method = inheritance[0]
-                else:
-                    raise Undeclared(Method(), name)
+                if method is None:
+                    inheritance = None
+                    if decl.parent:
+                        inheritance = self.recurVisit(methodname, decl.parent.name, o)
+                    if inheritance and type(inheritance[0]) is MType:
+                        method = inheritance[0]
+                if method is None:
+                    raise Undeclared(Method(), methodname)
                 if type(method.rettype) is not VoidType:
                     raise TypeMismatchInStatement(ast)
                 paramlist = [self.visit(param, o) for param in ast.param]
                 if len(paramlist) != len(method.partype):
                     raise TypeMismatchInStatement(ast)
                 for i in range(0, len(paramlist)):
-                    if type(paramlist[i][0]) is type(method.partype[i][0]):
+                    if type(paramlist[i][0]) is type(method.partype[i]):
                         if type(paramlist[i][0]) is ClassType:
-                            if paramlist[i][0].classname.name != method.partype[i][0].classname.name:
-                                raise TypeMismatchInStatement(ast)
-                        if type(paramlist[i][0]) is ArrayType:
-                            if paramlist[i][0].size != method.partype[i][0].size:
-                                raise TypeMismatchInStatement(ast)
-                            if type(paramlist[i][0].eleTyp) is not type(method.partype[i][0].eleTyp):
-                                if not(type(paramlist[i][0].eleTyp) is IntType and type(method.partype[i][0].eleTyp) is FloatType):
+                            if paramlist[i][0].classname.name != method.partype[i].classname.name:
+                                if not(self.recurClass(paramlist[i][0].classname.name, method.partype[i].classname.name, o)):
                                     raise TypeMismatchInStatement(ast)
-                    elif not(type(paramlist[i][0]) is IntType and type(method.partype[i][0]) is FloatType):
+                        if type(paramlist[i][0]) is ArrayType:
+                            if paramlist[i][0].size != method.partype[i].size:
+                                raise TypeMismatchInStatement(ast)
+                            if type(paramlist[i][0].eleType) is not type(method.partype[i].eleType):
+                                if not(type(paramlist[i][0].eleType) is IntType and type(method.partype[i].eleType) is FloatType):
+                                    raise TypeMismatchInStatement(ast)
+                    elif not(type(paramlist[i][0]) is IntType and type(method.partype[i]) is FloatType):
                         raise TypeMismatchInStatement(ast)
+                return
         raise Undeclared(Class(), name)
         
     def visitCallExpr(self,ast,o):
         methodname = ast.method.name 
         name = ''
-        if ast.obj:
-            obj = self.visit(ast.obj, o)
-            if type(obj[0]) is ClassType:
-                name = obj.classname.name
-            elif type(obj[0]) is SelfLiteral:
-                name = o[2]
+        if methodname.startswith('@'):
+            if ast.obj:
+                name = ast.obj.name
             else:
-                raise TypeMismatchInExpression(ast)
+                name = o[2]
         else:
-            name = o[2]
+            if ast.obj:
+                obj = self.visit(ast.obj, o)
+                if type(obj[0]) is ClassType:
+                    name = obj[0].classname.name
+                elif type(obj[0]) is SelfLiteral:
+                    name = o[2]
+                else:
+                    raise TypeMismatchInExpression(ast)
+            else:
+                name = o[2]
             
         for decl in o[1]:
             if name == decl.name:
+                method = None
                 for mem in decl.member:
                     if mem.name == methodname and type(mem.typ) is MType:
                         method = mem.typ 
-                inheritance = None
-                if decl.parent:
-                    inheritance = self.recurVisit(methodname, decl.parent.name, o)
-                if inheritance and type(inheritance[0]) is MType:
-                    method = inheritance[0]
-                else:
-                    raise Undeclared(Method(), name)
+                if method is None:
+                    inheritance = None
+                    if decl.parent:
+                        inheritance = self.recurVisit(methodname, decl.parent.name, o)
+                    if inheritance and type(inheritance[0]) is MType:
+                        method = inheritance[0]
+                if method is None:
+                    raise Undeclared(Method(), methodname)
                 if type(method.rettype) is VoidType:
                     raise TypeMismatchInExpression(ast)
                 paramlist = [self.visit(param, o) for param in ast.param]
                 if len(paramlist) != len(method.partype):
                     raise TypeMismatchInExpression(ast)
                 for i in range(0, len(paramlist)):
-                    if type(paramlist[i][0]) is type(method.partype[i][0]):
+                    if type(paramlist[i][0]) is type(method.partype[i]):
                         if type(paramlist[i][0]) is ClassType:
-                            if paramlist[i][0].classname.name != method.partype[i][0].classname.name:
-                                raise TypeMismatchInExpression(ast)
-                        if type(paramlist[i][0]) is ArrayType:
-                            if paramlist[i][0].size != method.partype[i][0].size:
-                                raise TypeMismatchInExpression(ast)
-                            if type(paramlist[i][0].eleTyp) is not type(method.partype[i][0].eleTyp):
-                                if not(type(paramlist[i][0].eleTyp) is IntType and type(method.partype[i][0].eleTyp) is FloatType):
+                            if paramlist[i][0].classname.name != method.partype[i].classname.name:
+                                if not(self.recurClass(paramlist[i][0].classname.name, method.partype[i].classname.name, o)):
                                     raise TypeMismatchInExpression(ast)
-                    elif not(type(paramlist[i][0]) is IntType and type(method.partype[i][0]) is FloatType):
+                        if type(paramlist[i][0]) is ArrayType:
+                            if paramlist[i][0].size != method.partype[i].size:
+                                raise TypeMismatchInExpression(ast)
+                            if type(paramlist[i][0].eleType) is not type(method.partype[i].eleType):
+                                if not(type(paramlist[i][0].eleType) is IntType and type(method.partype[i].eleType) is FloatType):
+                                    raise TypeMismatchInExpression(ast)
+                    elif not(type(paramlist[i][0]) is IntType and type(method.partype[i]) is FloatType):
                         raise TypeMismatchInExpression(ast)
-                raise Undeclared(Method(), name)
+                return (method.rettype, 'const')
         raise Undeclared(Class(), name)
     
     def visitContinue(self,ast,o):
@@ -494,20 +551,21 @@ class StaticChecker(BaseVisitor,Utils):
             typeReturn = self.visit(ast.expr, o)
             if type(o[3]) is not type(typeReturn[0]):
                 if not (type(o[3]) is FloatType and type(typeReturn[0]) is IntType):
-                    return TypeMismatchInStatement(ast)   
+                    raise TypeMismatchInStatement(ast)   
             else:
                 if type(o[3]) is ClassType:
                     if o[3].classname.name != typeReturn[0].classname.name:
-                        raise TypeMismatchInStatement(ast)
+                        if not(self.recurClass(typeReturn[0].classname.name, o[3].classname.name, o)):
+                            raise TypeMismatchInStatement(ast)
                 if type(o[3]) is ArrayType:
                     if o[3].size != typeReturn[0].size:
                         raise TypeMismatchInStatement(ast)
-                    if type(o[3].eleTyp) is not type(typeReturn[0].eleTyp):
-                        if not(type(o[3].eleTyp) is FloatType and type(typeReturn[0].eleTyp) is IntType):
+                    if type(o[3].eleType) is not type(typeReturn[0].eleType):
+                        if not(type(o[3].eleType) is FloatType and type(typeReturn[0].eleType) is IntType):
                             raise TypeMismatchInStatement(ast)
         else:
             if type(o[3]) is not VoidType:
-                return TypeMismatchInStatement(ast)        
+                raise TypeMismatchInStatement(ast)        
     
     def visitIntLiteral(self,ast,o):
         return (IntType(), 'const')
@@ -554,7 +612,8 @@ class StaticChecker(BaseVisitor,Utils):
         return ArrayType(ast.size, ast.eleType)
     
     def visitClassType(self,ast,o):
-        if ast.classname.name in map(lambda x: x.name, o[1]):
-            return ClassType(ast.classname)
+        for x in o[1]:
+            if ast.classname.name == x.name:
+                return ClassType(ast.classname)
         raise Undeclared(Class(), ast.classname.name)
     

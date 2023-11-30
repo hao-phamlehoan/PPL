@@ -1,0 +1,12 @@
+ 
+                    class A {
+                        
+                    }
+                    class Program {
+                        func @main():void {
+                            var i: A ;
+                            var b: A = i;
+                            var i: int;
+                        }
+                    }
+                

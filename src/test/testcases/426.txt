@@ -1,0 +1,8 @@
+ 
+                    class b {var a: float = 3.4 * 5;}
+                    class Program {
+                        func @main():void {
+                            io.@writeInt(3.6);
+                        }
+                    }
+                

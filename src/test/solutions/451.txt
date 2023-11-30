@@ -1,0 +1,1 @@
+Type Mismatch In Declaration: VarDecl(Id(a),VoidType)

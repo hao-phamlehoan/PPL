@@ -1,0 +1,15 @@
+ 
+                    class B { 
+                        var a: int;
+                    }
+                    class B <- A {
+                        const My1stCons, My2ndCons: int = 1 + 5, 2;
+var @x, @y : int = 0, 0;
+                    }
+                    class Program {
+                        func @main():void {
+                    var b,b:int;
+                            
+                        }
+                    }
+                

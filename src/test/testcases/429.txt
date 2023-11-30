@@ -1,0 +1,9 @@
+ 
+                    class Program {
+                        func @main():void {
+                            var a:int;
+                            var b:int = 3*4+6.0;
+                            var b:float;
+                        }
+                    }
+                

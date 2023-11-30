@@ -1,0 +1,19 @@
+ 
+                    class C {
+                        
+                    }
+                    class C <-B { 
+                        var a: int;
+                    }
+                    class A {
+                        
+                    }
+                    class Program {
+                        func @main():void {
+                            var c: C;
+                            var b: A;
+                            c := b;
+                            var b: string;
+                        }
+                    }
+                

@@ -1,0 +1,8 @@
+ 
+                    class Program {
+                        func @main():void {
+                            var b:int = a;
+                            var b:float;
+                        }
+                    }
+                

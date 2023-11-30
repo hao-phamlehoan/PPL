@@ -1,0 +1,21 @@
+ 
+                    class B { }
+                    class A {
+                        func constructor (a: B, b:float) {
+                            
+                        }
+                        func constructor (a: B) {
+                            
+                        }
+                    }
+                    class Program {
+                        const b:int = 12;
+                        func @main():void {
+                            var b: A;
+                            var c: B;
+                            b := new A(c);
+
+                            var b: float;
+                        }
+                    }
+                

@@ -1,0 +1,20 @@
+ 
+                    class Program {
+                        func sum(): void {
+                            return;
+                        }
+                        func @main():void {
+                            var a: string = "123";
+                            { 
+                                var a: int;
+                                { 
+                                    var a: int;
+                                }
+                                { 
+                                    var a: int;
+                                }
+                            }
+                            var i,i: float;
+                        }
+                    }
+                

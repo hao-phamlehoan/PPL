@@ -1,1 +1,1 @@
-Redeclared Attribute: @main
+Redeclared Method: @main

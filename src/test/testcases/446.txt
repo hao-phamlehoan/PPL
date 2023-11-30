@@ -1,0 +1,9 @@
+ 
+                    class Program {
+                        var a : int;
+                        func @main():void {
+                            var a: int = self.a;
+                            var i,i: float;
+                        }
+                    }
+                

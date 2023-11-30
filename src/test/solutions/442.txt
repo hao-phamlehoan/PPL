@@ -1,0 +1,1 @@
+Type Mismatch In Declaration: VarDecl(Id(i),IntType,FloatLit(2.3))

@@ -1,0 +1,1 @@
+Type Mismatch In Declaration: VarDecl(Id(b),IntType,BinaryOp(+,BinaryOp(*,IntLit(3),IntLit(4)),FloatLit(6.0)))
