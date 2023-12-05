@@ -858,24 +858,34 @@ class CheckSuite(unittest.TestCase):
                         func @main():void {
                             const l: [3]int = [2,4,5];
                             l[1] :=  2;
+                            const a: [3]int = [2,4,5];
+                            l := a;
+                            
                         }
                     }
                 """
-        expect = "Cannot Assign To Constant: AssignStmt(ArrayCell(Id(l),IntLit(1)),IntLit(2))"
+        expect = "Cannot Assign To Constant: AssignStmt(Id(l),Id(a))"
         self.assertTrue(TestChecker.test(input,expect,469))
     def test_70(self):
         input = """ 
+                    class A {
+                        func abc(): [5]int {
+                            
+                        }
+                    }
                     class Program {
                         const b:int = 12;
                         func @main():void {
+                            var a: A;
                             var k: [3]int = [2,4,5];
                             k[1] := 0;
                             const l: [3]int = [2,4,5];
-                            l[1] :=  2;
+                            a.abc()[1] := k[2];
+                            a := c;
                         }
                     }
                 """
-        expect = "Cannot Assign To Constant: AssignStmt(ArrayCell(Id(l),IntLit(1)),IntLit(2))"
+        expect = "Undeclared Identifier: c"
         self.assertTrue(TestChecker.test(input,expect,470))
     def test_71(self):
         input = """ 
@@ -1922,21 +1932,21 @@ var @x, @y : int = 0, 0;
                         
                     }
                     class C <-B { 
-                        var a: int;
+                        var @a: int;
                     }
                     class A {
                         
                     }
                     class Program {
                         func @main():void {
-                            var c: C;
+                            var c: int;
                             var b: A;
-                            c := b;
+                            c := B.@a;
                             var b: string;
                         }
                     }
                 """
-        expect = "Type Mismatch In Statement: AssignStmt(Id(c),Id(b))"
+        expect = "Redeclared Variable: b"
         self.assertTrue(TestChecker.test(input,expect,524))
     def test_125(self):
         input = """ 
@@ -1944,25 +1954,26 @@ var @x, @y : int = 0, 0;
                         
                     }
                     class C <-B { 
-                        var a: int;
+                        var @a: int;
                     }
                     class A {
                         
                     }
                     class Program {
+                        var @abc: float;
                         func @main():void {
                             var c: C;
                             var b: A;
-                            c := b;
+                            @abc := B.@a;
                             var b: string;
                         }
                     }
                 """
-        expect = "Type Mismatch In Statement: AssignStmt(Id(c),Id(b))"
+        expect = "Redeclared Variable: b"
         self.assertTrue(TestChecker.test(input,expect,525))
     def test_126(self):
         input = """ 
-                    class C {
+                    class B <- C {
                         
                     }
                     class C <-B { 
@@ -1988,7 +1999,7 @@ var @x, @y : int = 0, 0;
                         
                     }
                     class C <-B { 
-                        var a: int;
+                        var a: B;
                     }
                     class A {
                         
@@ -2010,7 +2021,7 @@ var @x, @y : int = 0, 0;
                         
                     }
                     class C <-B { 
-                        var a: int;
+                        var a: A;
                     }
                     class A {
                         
@@ -2032,7 +2043,7 @@ var @x, @y : int = 0, 0;
                         
                     }
                     class C <-B { 
-                        var a: int;
+                        var a: D;
                     }
                     class A {
                         
@@ -2046,7 +2057,7 @@ var @x, @y : int = 0, 0;
                         }
                     }
                 """
-        expect = "Type Mismatch In Statement: AssignStmt(Id(c),Id(b))"
+        expect = "Undeclared Class: D"
         self.assertTrue(TestChecker.test(input,expect,529))
     def test_130(self):
         input = """ 
@@ -2060,16 +2071,114 @@ var @x, @y : int = 0, 0;
                         
                     }
                     class Program {
+                        var a: string;
                         func @main():void {
                             var c: C;
                             var b: A;
-                            c := b;
-                            var b: string;
+                            var d: string;
+                            d := a;
+                            c :=a;
                         }
                     }
                 """
-        expect = "Type Mismatch In Statement: AssignStmt(Id(c),Id(b))"
+        expect = "Type Mismatch In Statement: AssignStmt(Id(c),Id(a))"
         self.assertTrue(TestChecker.test(input,expect,530))
+    def test_131(self):
+        input = """ 
+                    class C {
+                    }
+                    class C <-BC { 
+                    }
+                    class io {
+                        
+                    }
+                    class Program {
+                        func @main():void {
+                            var i: int;
+                            var f: float;
+                            var s: string;
+                            var b: bool;
+                            
+                            var ia: [4]int;
+                            var fa: [4]float;
+                            var sa: [4]string;
+                            var ba: [4]bool;
+                            
+                            var err: int = err;
+                        }
+                    }
+                """
+        expect = "Redeclared Class: io"
+        self.assertTrue(TestChecker.test(input,expect,531))
+    def test_132(self):
+        input = """ 
+                    class C {
+                    }
+                    class C <-BC { 
+                    }
+                    class Program {
+                        func @main():void {
+                            var i: int;
+                            var f: float;
+                            var s: string;
+                            var b: bool;
+                            
+                            var ia: [4]int;
+                            var fa: [4]float;
+                            var sa: [4]string;
+                            var ba: [4]bool;
+                            
+                            io.@writeFloat(1);
+                            var err: int = err;
+                        }
+                    }
+                """
+        expect = "Undeclared Identifier: err"
+        self.assertTrue(TestChecker.test(input,expect,532))
+    
+    def test_133(self):
+        input = """ 
+                    class C {
+                        func constructor() {
+                        }
+                    }
+                    class C <-BC { 
+                        func constructor() {
+                        }
+                    }
+                    class A {
+                        var abc : int;
+                        func constructor(i:int, c: C) {
+                            var a :int = abc;
+                        }
+                        func call (fa: [4]float, s: string) : float {
+                            
+                            const f: float = fa[1];
+                            
+                            return f;
+                        }
+                    }
+                    class Program {
+                        func @main():void {
+                            var i: int;
+                            var f: float;
+                            var s: string;
+                            var b: bool;
+                            
+                            var ia: [4]int;
+                            var fa: [4]float;
+                            var sa: [4]string;
+                            var ba: [4]bool;
+                            var c:C;
+                            c := new BC();
+                            var newA: A = new A(i, null);
+                            f := newA.call(fa, s);
+                            var err: int = err;
+                        }
+                    }
+                """
+        expect = "Undeclared Identifier: err"
+        self.assertTrue(TestChecker.test(input,expect,533))
     
     
     

@@ -3,16 +3,17 @@
                         
                     }
                     class C <-B { 
-                        var a: int;
+                        var @a: int;
                     }
                     class A {
                         
                     }
                     class Program {
+                        var @abc: float;
                         func @main():void {
                             var c: C;
                             var b: A;
-                            c := b;
+                            @abc := B.@a;
                             var b: string;
                         }
                     }

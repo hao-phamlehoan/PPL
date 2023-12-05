@@ -1,0 +1,40 @@
+ 
+                    class C {
+                        func constructor() {
+                        }
+                    }
+                    class C <-BC { 
+                        func constructor() {
+                        }
+                    }
+                    class A {
+                        var abc : int;
+                        func constructor(i:int, c: C) {
+                            var a :int = abc;
+                        }
+                        func call (fa: [4]float, s: string) : float {
+                            
+                            const f: float = fa[1];
+                            
+                            return f;
+                        }
+                    }
+                    class Program {
+                        func @main():void {
+                            var i: int;
+                            var f: float;
+                            var s: string;
+                            var b: bool;
+                            
+                            var ia: [4]int;
+                            var fa: [4]float;
+                            var sa: [4]string;
+                            var ba: [4]bool;
+                            var c:C;
+                            c := new BC();
+                            var newA: A = new A(i, null);
+                            f := newA.call(fa, s);
+                            var err: int = err;
+                        }
+                    }
+                

@@ -1,1 +1,1 @@
-Type Mismatch In Statement: AssignStmt(Id(c),Id(b))
+Type Mismatch In Statement: AssignStmt(Id(c),Id(a))

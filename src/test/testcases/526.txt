@@ -1,5 +1,5 @@
  
-                    class C {
+                    class B <- C {
                         
                     }
                     class C <-B { 

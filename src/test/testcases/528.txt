@@ -3,7 +3,7 @@
                         
                     }
                     class C <-B { 
-                        var a: int;
+                        var a: A;
                     }
                     class A {
                         

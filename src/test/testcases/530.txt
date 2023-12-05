@@ -9,11 +9,13 @@
                         
                     }
                     class Program {
+                        var a: string;
                         func @main():void {
                             var c: C;
                             var b: A;
-                            c := b;
-                            var b: string;
+                            var d: string;
+                            d := a;
+                            c :=a;
                         }
                     }
                 

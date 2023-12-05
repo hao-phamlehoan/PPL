@@ -35,19 +35,22 @@ class GetEnv(BaseVisitor,Utils):
         
     def visitProgram(self,ast,o):
         o = []
+        listclass = []
         for decl in ast.decl:
-            o += self.visit(decl, o)
+            listclass += [decl.classname]
+        for decl in ast.decl:
+            o += self.visit(decl, (o, listclass))
         return o
         
     def visitClassDecl(self,ast,o):
         name = ast.classname.name 
-        for decl in o:
-            if name == decl.name:
+        for decl in o[0]:
+            if name == decl.name or name == 'io':
                 raise Redeclared(Class(), name)
         parent = ast.parentname
         if parent:
             found = False
-            for decl in o:
+            for decl in o[1]:
                 if parent.name == decl.name:
                     found = True
                     break
@@ -55,7 +58,7 @@ class GetEnv(BaseVisitor,Utils):
                 raise Undeclared(Class(), parent.name)
         env = []
         for mem in ast.memlist:
-            env += self.visit(mem, (env, o))
+            env += self.visit(mem, (env, o[0], o[1]))
         return [BKClass(name, parent, env)]
         
     def visitMethodDecl(self,ast,o):
@@ -110,7 +113,7 @@ class GetEnv(BaseVisitor,Utils):
         return ArrayType(ast.size, ast.eleType)
     
     def visitClassType(self,ast,o):
-        if ast.classname.name in map(lambda x: x.name, o[1]):
+        if ast.classname.name in map(lambda x: x.name, o[2]):
             return ClassType(ast.classname)
         raise Undeclared(Class(), ast.classname.name)
 
@@ -284,7 +287,7 @@ class StaticChecker(BaseVisitor,Utils):
                 return (BoolType(), 'const')
             raise TypeMismatchInExpression(ast)
         if ast.op in ['==', '!=']:
-            if (type(e1t) is IntType and type(e2t) is IntType) or (type(e1t) is BoolType and type(e2t) is BoolType):
+            if (type(e1t) is IntType or type(e1t) is BoolType) and (type(e2t) is IntType or type(e2t) is BoolType):
                 return (BoolType(), 'const')
             raise TypeMismatchInExpression(ast)
             
@@ -324,17 +327,23 @@ class StaticChecker(BaseVisitor,Utils):
                                         if type(paramlist[i][0].eleType) is not type(method.partype[i].eleType):
                                             if not(type(paramlist[i][0].eleType) is IntType and type(method.partype[i].eleType) is FloatType):
                                                 flag = False
-                                elif not(type(paramlist[i][0]) is IntType and type(method.partype[i]) is FloatType):
-                                    flag = False
+                                else:
+                                    newflag = True
+                                    if (type(paramlist[i][0]) is IntType and type(method.partype[i]) is FloatType):
+                                        newflag = False
+                                    if (type(paramlist[i][0]) is NullLiteral and type(method.partype[i]) is ClassType):
+                                        newflag = False
+                                    if newflag:
+                                        raise TypeMismatchInExpression(ast)
                 if flag:
                     return (ClassType(ast.classname), 'const')
                 raise TypeMismatchInExpression(ast)
         raise Undeclared(Class(), ast.classname.name)
         
-    def visitId(self,ast,o):            
+    def visitId(self,ast,o):     
         for i in o[0]:
             for j in i:
-                if ast.name ==  j[0]:
+                if ast.name == j[0]:
                     return (j[1], j[2])
         for decl in o[1]:
             if o[2] == decl.name:
@@ -348,7 +357,8 @@ class StaticChecker(BaseVisitor,Utils):
         idxType = self.visit(ast.idx, o)
         if type(idxType[0]) is not IntType or type(arrType[0]) is not ArrayType:
             raise TypeMismatchInExpression(ast)
-        return arrType[0].eleType, arrType[1]
+        # return arrType[0].eleType, arrType[1]
+        return arrType[0].eleType, 'var'
     
     def visitFieldAccess(self,ast,o):
         name = ''
@@ -383,7 +393,12 @@ class StaticChecker(BaseVisitor,Utils):
     
     def visitBlock(self,ast,o):
         stmtlist = ast.stmt 
-        local = [[]] + o[0]
+        local = [[]]
+        if len(o[0]) > 0:
+            if type(o[0][0]) is list: 
+                local += o[0]
+            else:
+                local[0] += o[0]
         for stmt in stmtlist:
             self.visit(stmt, (local, o[1], o[2], o[3], o[4]))
     
@@ -413,7 +428,12 @@ class StaticChecker(BaseVisitor,Utils):
         if type(lhs[0]) is VoidType:
             raise TypeMismatchInStatement(ast)
         if type(lhs[0]) is not type(exp[0]):
-            if not(type(lhs[0]) is FloatType and type(exp[0]) is IntType):
+            flag = True
+            if type(lhs[0]) is FloatType and type(exp[0]) is IntType:
+                flag = False
+            if type(lhs[0]) is ClassType and type(exp[0]) is NullLiteral:
+                flag = False
+            if flag:
                 raise TypeMismatchInStatement(ast)
         elif type(lhs[0]) is ClassType:
             if lhs[0].classname.name != exp[0].classname.name:
@@ -477,8 +497,14 @@ class StaticChecker(BaseVisitor,Utils):
                             if type(paramlist[i][0].eleType) is not type(method.partype[i].eleType):
                                 if not(type(paramlist[i][0].eleType) is IntType and type(method.partype[i].eleType) is FloatType):
                                     raise TypeMismatchInStatement(ast)
-                    elif not(type(paramlist[i][0]) is IntType and type(method.partype[i]) is FloatType):
-                        raise TypeMismatchInStatement(ast)
+                    else:
+                        flag = True
+                        if type(paramlist[i][0]) is IntType and type(method.partype[i]) is FloatType:
+                            flag = False
+                        if type(paramlist[i][0]) is NullLiteral and type(method.partype[i]) is ClassType:
+                            flag = False
+                        if flag:
+                            raise TypeMismatchInStatement(ast)
                 return
         raise Undeclared(Class(), name)
         
@@ -533,8 +559,14 @@ class StaticChecker(BaseVisitor,Utils):
                             if type(paramlist[i][0].eleType) is not type(method.partype[i].eleType):
                                 if not(type(paramlist[i][0].eleType) is IntType and type(method.partype[i].eleType) is FloatType):
                                     raise TypeMismatchInExpression(ast)
-                    elif not(type(paramlist[i][0]) is IntType and type(method.partype[i]) is FloatType):
-                        raise TypeMismatchInExpression(ast)
+                    else:
+                        flag = True
+                        if type(paramlist[i][0]) is IntType and type(method.partype[i]) is FloatType:
+                            flag = False
+                        if type(paramlist[i][0]) is NullLiteral and type(method.partype[i]) is ClassType:
+                            flag = False
+                        if flag:
+                            raise TypeMismatchInExpression(ast)
                 return (method.rettype, 'const')
         raise Undeclared(Class(), name)
     
@@ -550,7 +582,12 @@ class StaticChecker(BaseVisitor,Utils):
         if ast.expr:
             typeReturn = self.visit(ast.expr, o)
             if type(o[3]) is not type(typeReturn[0]):
-                if not (type(o[3]) is FloatType and type(typeReturn[0]) is IntType):
+                flag = True
+                if (type(o[3]) is FloatType and type(typeReturn[0]) is IntType):
+                    flag = False
+                if (type(o[3]) is ClassType and type(typeReturn[0]) is NullLiteral):
+                    flag = False
+                if flag:
                     raise TypeMismatchInStatement(ast)   
             else:
                 if type(o[3]) is ClassType:

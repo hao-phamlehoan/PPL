@@ -1,0 +1,24 @@
+ 
+                    class C {
+                    }
+                    class C <-BC { 
+                    }
+                    class io {
+                        
+                    }
+                    class Program {
+                        func @main():void {
+                            var i: int;
+                            var f: float;
+                            var s: string;
+                            var b: bool;
+                            
+                            var ia: [4]int;
+                            var fa: [4]float;
+                            var sa: [4]string;
+                            var ba: [4]bool;
+                            
+                            var err: int = err;
+                        }
+                    }
+                
