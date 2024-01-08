@@ -2139,22 +2139,30 @@ var @x, @y : int = 0, 0;
     def test_133(self):
         input = """ 
                     class C {
+                        var @c : string;
                         func constructor() {
                         }
                     }
                     class C <-BC { 
+                        var @b : string;
                         func constructor() {
                         }
                     }
                     class A {
-                        var abc : int;
+                        var @a : string;
+                        var fa1: float;
                         func constructor(i:int, c: C) {
-                            var a :int = abc;
                         }
                         func call (fa: [4]float, s: string) : float {
                             
-                            const f: float = fa[1];
+                            const f: float = fa1;
                             
+                            return f;
+                        }
+                        func call1 (fa: [4]float, s: string) : float {
+                            
+                            const f: float = fa[1];
+                            s := A.@a;
                             return f;
                         }
                     }
@@ -2172,7 +2180,7 @@ var @x, @y : int = 0, 0;
                             var c:C;
                             c := new BC();
                             var newA: A = new A(i, null);
-                            f := newA.call(fa, s);
+                            f := newA.call1(fa, s);
                             var err: int = err;
                         }
                     }
